@@ -7,6 +7,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const MAX_ROUNDS_PER_ROOM = 5
+
 type Room struct {
 	Id           string     `json:"id"`
 	Status       RoomStatus `json:"status"`
@@ -15,7 +17,7 @@ type Room struct {
 	Players      []Player   `json:"players"`
 }
 
-func CreateRoom(r Room) *Room {
+func CreateRoom() *Room {
 	id := uuid.NewV4()
 
 	return &Room{
@@ -38,12 +40,12 @@ func (r *Room) StartGame() (bool, error) {
 
 func (r *Room) Join(player *Player) (bool, error) {
 	if r.Status != Created || len(r.Players) >= 8 {
-		return false, errors.New("Room in progress, can't join it")
+		return false, errors.New("room_already_in_progress")
 	}
 
 	for _, p := range r.Players {
 		if player.Session == p.Session {
-			return false, errors.New("Player already joined in room")
+			return false, errors.New("player_already_connected")
 		}
 	}
 
@@ -53,4 +55,43 @@ func (r *Room) Join(player *Player) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func (r *Room) NewRound() (*Round, error) {
+	if !(r.Status == Starting || r.Status == Started) {
+		return nil, errors.New("new_round_unsuported_operation")
+	}
+
+	if len(r.Rounds) >= MAX_ROUNDS_PER_ROOM {
+		return nil, errors.New("new_round_unsuported_operation")
+	}
+
+	if r.Status == Starting {
+		r.Status = Started
+	}
+
+	newRound := r.createRoundDistinctLetter()
+	r.Rounds = append(r.Rounds, *newRound)
+
+	return newRound, nil
+}
+
+func (r *Room) createRoundDistinctLetter() *Round {
+	round := NewRound(len(r.Rounds) + 1)
+
+	if r.existLetter(round.Letter) {
+		return r.createRoundDistinctLetter()
+	}
+
+	return round
+}
+
+func (r *Room) existLetter(letter string) bool {
+	for _, round := range r.Rounds {
+		if round.Letter == letter {
+			return true
+		}
+	}
+
+	return false
 }
