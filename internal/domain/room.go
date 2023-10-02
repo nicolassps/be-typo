@@ -2,12 +2,14 @@ package model
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
 )
 
 const MAX_ROUNDS_PER_ROOM = 5
+const MAX_PLAYERS_PER_ROOM = 8
 
 type Room struct {
 	Id           string     `json:"id"`
@@ -29,6 +31,10 @@ func CreateRoom() *Room {
 	}
 }
 
+func (r *Room) FriendlyCode() string {
+	return strings.ToUpper(strings.Split(r.Id, "-")[0])
+}
+
 func (r *Room) StartGame() (bool, error) {
 	if r.Status != Created || len(r.Players) <= 1 {
 		return false, errors.New("invalid_start_operation")
@@ -36,6 +42,10 @@ func (r *Room) StartGame() (bool, error) {
 
 	r.Status = Starting
 	return true, nil
+}
+
+func (r *Room) CanJoin() bool {
+	return r.Status == Created && len(r.Players) < MAX_PLAYERS_PER_ROOM
 }
 
 func (r *Room) Join(player *Player) (bool, error) {
