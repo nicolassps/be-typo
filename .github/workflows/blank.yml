@@ -1,0 +1,21 @@
+name: GO Test
+
+on:
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.1'
+      - name: Install dependencies
+        run: go get .
+      - name: Build project
+        run: go build -v ./...
+      - name: Test with the Go CLI
+        run: go test
