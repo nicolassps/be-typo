@@ -7,6 +7,7 @@ import (
 
 type RoomRepository interface {
 	RetrieveCreatedRooms() []domain.Room
+	RetrieveRoom(code string) (*domain.Room, error)
 	Store(room *domain.Room) error
 	Update(room *domain.Room) error
 }
@@ -31,6 +32,16 @@ func (r RoomInMemoryRepository) RetrieveCreatedRooms() []domain.Room {
 	}
 
 	return result
+}
+
+func (r RoomInMemoryRepository) RetrieveRoom(code string) (*domain.Room, error) {
+	for _, room := range r.memory {
+		if room.FriendlyCode() == code {
+			return room, nil
+		}
+	}
+
+	return nil, errors.New("room_not_found")
 }
 
 func (r RoomInMemoryRepository) Store(room *domain.Room) error {
